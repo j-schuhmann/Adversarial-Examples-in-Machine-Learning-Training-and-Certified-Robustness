@@ -91,7 +91,7 @@ class PGDAttackl2(attack):
 
 
 
-                x = tf.clip_by_value(x, 0, 1)  # ensure valid pixel range
+                x = tf.clip_by_value(x, 0, 1)  
 
             x_adv = tf.tensor_scatter_nd_update(x_adv, [[k]], x)
 

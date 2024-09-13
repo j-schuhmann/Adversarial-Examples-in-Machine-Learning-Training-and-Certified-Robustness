@@ -1,19 +1,49 @@
 import tensorflow as tf
 import numpy as np
+import tensorflow as tf
+
+
+def custom_sign(x):
+        return tf.sign(x)
+
+def model_with_sign(model):
+    model_with_sign = tf.keras.models.Sequential([
+        model,                       
+        tf.keras.layers.Lambda(custom_sign)          
+    ])
+    return model_with_sign
 
 
 
-def print_accuracy(model,x_image,y_image,adversarial=False):
-
-    predictions = model(x_image)
-    predictions=np.argmax(predictions, axis=1)
-    y_image=np.argmax(y_image, axis=1)
-    accuracy = np.mean(np.equal(y_image, predictions))
+def print_accuracy(model,x_image,y_image,adversarial=False,robustness_experiment=None):
+    'robustness_experiment corresponds to the experiments with certfied robustness'
+    if robustness_experiment:
+        predictions = model_with_sign(model).predict(x_image)
+        accuracy = np.mean(np.equal(y_image, predictions.flatten()))
+    else:
+        predictions = model(x_image)
+        predictions=np.argmax(predictions, axis=1)
+        y_image=np.argmax(y_image, axis=1)
+        accuracy = np.mean(np.equal(y_image, predictions))
+    
+        
     if adversarial:
-        print(f"Accuracy on adversarial perturbed test set: {accuracy}")
+        print(f"Accuracy on adversarial test set: {accuracy}")
     else:
         print(f"Accuracy on test set: {accuracy}")
     return accuracy
+
+
+def positive_negative_parts(A):
+
+    A_abs = tf.abs(A)
+
+    A_positive = 0.5 * (A + A_abs)
+
+    A_negative = 0.5 * (A_abs - A)
+
+    return A_positive, A_negative
+
 
 
 def mnist_data_and_preprocessing():
@@ -79,7 +109,7 @@ def mnist_binary_all_data_and_preprocessing():
 def custom_sign_metric_for_training(y_true, y_pred):
     y_pred_sign = tf.sign(y_pred)
     
-    y_pred_sign = tf.squeeze(y_pred_sign)  #different shapes otherwise and completly wrong accuracy!!!
+    y_pred_sign = tf.squeeze(y_pred_sign)  
    
     y_true = tf.cast(y_true, tf.int32)
     

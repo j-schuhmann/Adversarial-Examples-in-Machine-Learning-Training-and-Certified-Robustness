@@ -1,79 +1,10 @@
 import tensorflow as tf
-from util import print_accuracy
 from  attacks import PGDAttack,FGSMAttack,PGDAttackl2
+from models import ground_model
 import numpy as np 
 import json
 import pickle
-
-
-# def model_madry_experiments(input_shape):
-#     model = tf.keras.models.Sequential([
-#     tf.keras.layers.Conv2D(32, (5,5), padding='same', activation='relu', input_shape=input_shape),
-#     tf.keras.layers.Conv2D(32, (5,5), padding='same', activation='relu'),
-#     tf.keras.layers.MaxPool2D(),
-#     tf.keras.layers.Conv2D(64, (3,3), padding='same', activation='relu'),
-#     tf.keras.layers.Conv2D(64, (3,3), padding='same', activation='relu'),
-#     tf.keras.layers.MaxPool2D(strides=(2,2)),
-#     tf.keras.layers.Flatten(),
-#     tf.keras.layers.Dense(128, activation='relu'),
-#     tf.keras.layers.Dense(10, activation='softmax')
-# ])
-
-#     return model
-
-def custom_sign(x):
-        return tf.sign(x)
-
-def model_with_sign(model):
-    model_with_sign = tf.keras.models.Sequential([
-        model,                       
-        tf.keras.layers.Lambda(custom_sign)          
-    ])
-    return model_with_sign
-
-
-
-def print_accuracy(model,x_image,y_image,adversarial=False,robustness_experiment=None):
-
-    if robustness_experiment:
-        predictions = model_with_sign(model).predict(x_image)
-        accuracy = np.mean(np.equal(y_image, predictions.flatten()))
-    else:
-        predictions = model(x_image)
-        predictions=np.argmax(predictions, axis=1)
-        y_image=np.argmax(y_image, axis=1)
-        accuracy = np.mean(np.equal(y_image, predictions))
-    
-        
-    if adversarial:
-        print(f"Accuracy on adversarial test set: {accuracy}")
-    else:
-        print(f"Accuracy on test set: {accuracy}")
-    return accuracy
-
-
-
-
-
-
-
-
-
-
-def ground_model(input_shape):
-    model = tf.keras.models.Sequential([
-       
-        tf.keras.layers.Conv2D(32, (3, 3), padding='same', activation='relu', input_shape=input_shape),
-        tf.keras.layers.MaxPooling2D((2, 2)),
-        tf.keras.layers.Conv2D(64, (3, 3), padding='same', activation='relu'),
-        tf.keras.layers.MaxPooling2D((2, 2)),
-        tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(1024, activation='relu'),
-        tf.keras.layers.Dense(10, activation='softmax')
-    ])
-
-    return model
-
+from util import model_with_sign,print_accuracy
 
 
 
@@ -123,10 +54,6 @@ class training_model():
         self.step_size_attack_train=None
         self.epsilon_attack_train=None
 
-
-
-
-    
 
 
     def train(self):
@@ -254,9 +181,6 @@ class pgdl2_adversarial_training(training_model):
         self.step_size_attack_train = step_size_attack_train
         self.epsilon_attack_train = epsilon_attack_train
         self.attack=PGDAttackl2(self.model, self.epsilon_attack_train, self.loss_object,self.iterations_attack_train,self.step_size_attack_train)
-
-
-
 
 
 

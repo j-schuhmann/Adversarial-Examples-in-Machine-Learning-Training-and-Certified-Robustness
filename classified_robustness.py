@@ -2,34 +2,16 @@ import tensorflow as tf
 from scipy.optimize import brentq
 import numpy as np
 from attacks import PGDAttack
-from training_model import train_model, custom_sign
-from training_model import ground_model_delta_experiments1
+from training_classified_robustness import train_model, custom_sign
+from models import ground_model_delta_experiments1, ground_model_delta_experiments2, ground_model_delta_experiments3, ground_model_delta_experiments4
+from util import custom_sign, model_with_sign, positive_negative_parts
 
 
-def custom_sign(x):
-        return tf.sign(x)
-
-def model_with_sign(model):
-    model_with_sign = tf.keras.models.Sequential([
-        model,                       
-        tf.keras.layers.Lambda(custom_sign)          
-    ])
-    return model_with_sign
-
-def positive_negative_parts(A):
-
-    A_abs = tf.abs(A)
-
-    A_positive = 0.5 * (A + A_abs)
-
-    A_negative = 0.5 * (A_abs - A)
-
-    return A_positive, A_negative
 
 
 
 def compute_bounds(model, x, delta,activation):
-  
+    
     
     
     x = tf.convert_to_tensor(x, dtype=tf.float32)
@@ -94,7 +76,7 @@ def compute_bounds(model, x, delta,activation):
 
 
 
-def find_max_delta(model,x, max_interval, max_iterations,activation=tf.nn.sigmoid):
+def find_epsilon_max(model,x, max_interval, max_iterations,activation=tf.nn.sigmoid):
     gamma=1e-7 #to make sure we are not equal to 0 
 
     def delta_up_function(delta):
@@ -137,7 +119,7 @@ def find_max_delta(model,x, max_interval, max_iterations,activation=tf.nn.sigmoi
 def compute_delta_test_set(model, x_test,max_interval, max_iterations):
     delta_array = []
     for k in x_test:
-        delta = find_max_delta(model, k.flatten(),max_interval, max_iterations)
+        delta = find_epsilon_max(model, k.flatten(),max_interval, max_iterations)
         delta_array.append(delta)
 
     mean=np.mean(delta_array)
@@ -151,7 +133,7 @@ def compute_delta_test_set(model, x_test,max_interval, max_iterations):
 
     
 def compare2models_trained(model1_trained, model2_trained, x_test, y_test):
-
+    # compare the epsilon_max for different models
     model_with_sign_1 = tf.keras.models.Sequential([
         model1_trained,                       
         tf.keras.layers.Lambda(custom_sign)          
@@ -172,7 +154,6 @@ def compare2models_trained(model1_trained, model2_trained, x_test, y_test):
         
         correct_indices = np.where(prediction.flatten() == y_test)[0]
         
-        print('accuracy:',len(correct_indices)/len(y_test))
         
         correct_indices_per_model.append(set(correct_indices))
 
@@ -181,7 +162,7 @@ def compare2models_trained(model1_trained, model2_trained, x_test, y_test):
 
     # we only want the images which are correctly classified by all models, as our algo works only for correct onse! 
     correct_classified_x = x_test[list(common_correct_indices)]
-    print(f"Number of correctly classified images by all models: {len(correct_classified_x)}")
+
 
 
     mean=[]
@@ -194,7 +175,7 @@ def compare2models_trained(model1_trained, model2_trained, x_test, y_test):
         delta_array=[]
 
         for k in correct_classified_x:
-            delta=find_max_delta(model, k.flatten(),max_interval=1, max_iterations=100)
+            delta=find_epsilon_max(model, k.flatten(),max_interval=1, max_iterations=100)
             delta_array.append(delta)
     
         mean.append(np.mean(delta_array))
@@ -206,6 +187,7 @@ def compare2models_trained(model1_trained, model2_trained, x_test, y_test):
 
     
 def test_bounds_attack(model,delta_array,gamma,step_size_attack,iterations_attack,x_test,y_test):
+    # test the caluclated epsilon_max against the PGD attack, where the attack perturbation corresponds to the epsilon_max
     k=0
     for x,y,i in zip(x_test,y_test,delta_array):
         epsilon=i+gamma
@@ -224,7 +206,7 @@ def test_bounds_attack(model,delta_array,gamma,step_size_attack,iterations_attac
         
     
 
-
+# the followoing function is not up to date and should be updated
 
 def test_iterations_influence(model,x_train, y_train, x_test, y_test, max_epochs, batch_size,verbose,evalute_every):
     """testing the influence of the number of iterations/loss/acc on the delta"""
