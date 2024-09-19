@@ -2,7 +2,6 @@ import tensorflow as tf
 from scipy.optimize import brentq
 import numpy as np
 from attacks import PGDAttack
-from training_classified_robustness import train_model, custom_sign
 from models import ground_model_delta_experiments1, ground_model_delta_experiments2, ground_model_delta_experiments3, ground_model_delta_experiments4
 from util import custom_sign, model_with_sign, positive_negative_parts
 
