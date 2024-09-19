@@ -1,6 +1,6 @@
 # Adversarial Examples in Machine Learning: Training and Certified Robustness 
 This repository contains code for my master thesis: "Adversarial Examples in Machine Learning:
-Training and Certified Robustness "
+Training and Certified Robustness".
 
 ### Overview
 
